@@ -1,0 +1,67 @@
+{
+  "$schema": "./registry.schema.json",
+  "updated": "2026-10-24",
+  "skills": [
+    {
+      "name": "contract-redact",
+      "description": "中文合同本地脱敏：换成可还原代号供 AI 审查，或掩码后对外发送",
+      "platforms": [
+        "macos",
+        "linux",
+        "windows"
+      ],
+      "kind": "tool",
+      "requires": [
+        "python3",
+        "python-docx",
+        "openpyxl",
+        "pymupdf"
+      ],
+      "entry": "skills/contract-redact/SKILL.md"
+    },
+    {
+      "name": "server-audit",
+      "description": "只读审查一台 Linux 服务器的安全面，出分级报告",
+      "platforms": [
+        "macos",
+        "linux"
+      ],
+      "kind": "read-only",
+      "requires": [
+        "bash",
+        "ssh",
+        "python3"
+      ],
+      "entry": "skills/server-audit/SKILL.md"
+    },
+    {
+      "name": "server-harden",
+      "description": "按审计结果改服务器配置，每步可回滚，SSH 改动带 5 分钟自动还原",
+      "platforms": [
+        "macos",
+        "linux"
+      ],
+      "kind": "write",
+      "requires": [
+        "bash",
+        "ssh"
+      ],
+      "entry": "skills/server-harden/SKILL.md"
+    },
+    {
+      "name": "tailnet-audit",
+      "description": "审查 Tailscale 内网分段与暴露面，出可达性矩阵",
+      "platforms": [
+        "macos",
+        "linux"
+      ],
+      "kind": "read-only",
+      "requires": [
+        "bash",
+        "tailscale",
+        "python3"
+      ],
+      "entry": "skills/tailnet-audit/SKILL.md"
+    }
+  ]
+}
