@@ -67,6 +67,12 @@ TS_API_KEY=tskey-api-xxx scripts/tailnet-recon.sh acl --out acl-$(date +%F).json
 
 ## Pitfalls
 
+**云服务器 ufw 没放行 Tailscale 的 UDP 端口 → 只能走中继、监控反复掉线（2026-11-01 实测）。**
+症状：两端 `tailscale status` 都显示在线，但对端那栏是 `-`（没有任何路径）；一方到另一方 TCP 完全不通，反向 `tailscale ping` 又能通；Beszel 面板上一会儿在线一会儿离线，最后彻底 down。
+根因：tailscaled 监听 UDP（端口见 `ss -ulnp | grep tailscaled`，可在 `/etc/default/tailscaled` 用 `PORT="41641"` 固定），而 ufw 默认拒绝入站 → 直连建不起来，只能靠 DERP 中继，中继不稳就断。**Tailscale 本身不上线也能显示"在线"**，所以只看 `tailscale status` 永远查不出这个问题。
+判据：`ufw status verbose` 里没有对应 UDP 端口的 ALLOW；`tailscale netcheck` 的 DERP 延迟正常（说明出站没事）但对端 ping 超时；放行后 `tailscale ping` 立刻从 `via DERP` 变成 `via <公网IP>:端口`。
+修法：`ufw allow 41641/udp comment "tailscale direct"`（端口以实测为准），只放加密的 WireGuard 流量，ACL 照样管谁能连谁。回滚：`ufw delete allow 41641/udp`。
+
 - **`tailscale status` 看不到不等于不存在**：ACL 的可见性过滤会让某些节点彼此不可见；以 ping 和端口实测为准。
 - **ping 通只说明隧道层**，不代表任何 TCP 端口可访问；反过来端口不通也不代表安全（UDP 服务可能通，DERP 中继也可能被滥用）。
 - **tag 化的设备更容易被放宽**：`tag:cloud` 这种常被写成「允许访问所有」；重点审。
