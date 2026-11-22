@@ -172,6 +172,11 @@ import json, sys, datetime, re
 raw = open(sys.argv[1], encoding="utf-8", errors="replace").read()
 host = sys.argv[2] or "unknown"
 
+# 采集为空就别出 findings：空数据会把「防火墙没开 / 开了密码登录」当成 P0 报出来，是误报源头
+if not raw.strip() or "HOSTNAME=" not in raw:
+    print(json.dumps({"host": host, "error": "采集结果为空（ssh 失败或没跑起来），未做任何判定"}, ensure_ascii=False, indent=2))
+    sys.exit(0)
+
 def block(name):
     m = re.search(r"^%s_START$(.*?)^%s_END$" % (name, name), raw, re.S | re.M)
     return [l.strip() for l in (m.group(1) if m else "").splitlines() if l.strip()]
