@@ -18,7 +18,7 @@
 从「最危险的那台」出发，逐台逐端口测：
 
 ```bash
-scripts/tailnet-recon.sh from --ssh root@203.0.113.10 --key ~/.ssh/deploy \
+bash "$SKILL_DIR/scripts/tailnet-recon.sh" from --ssh root@203.0.113.10 --key ~/.ssh/deploy \
   --ports 22,445,139,5432,5433,6379,8090,8123,9091
 ```
 

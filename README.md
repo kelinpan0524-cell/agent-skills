@@ -9,9 +9,9 @@
 | 技能 | 干什么 | 会不会改东西 |
 | --- | --- | --- |
 | `contract-redact` | 中文合同本地脱敏，换代号给 AI 审，或掩码对外发 | 只处理你给的副本 |
-| `server-audit` | 只读审查一台 Linux 服务器的安全面，出分级报告 | 不改，只读 |
-| `server-harden` | 按报告逐项改，每步可回滚，改 SSH 前挂 5 分钟自动还原 | 改，可回滚 |
-| `tailnet-audit` | Tailscale 内网的谁能摸到谁，出可达性矩阵 | 不改，只读 |
+| `server-audit` | 只读审查单台或多台 Linux 服务器的安全面，出分级报告 | 不改，只读 |
+| `server-harden` | 按报告逐项改，每步可回滚，改 SSH 前先查公钥并挂 5 分钟自动还原 | 改，可回滚 |
+| `tailnet-audit` | Tailscale 内网的谁能摸到谁，并发测出可达性矩阵 | 不改，只读 |
 
 ## 装
 
@@ -19,13 +19,14 @@
 git clone git@github.com:kelinpan0524-cell/agent-skills.git
 cd agent-skills
 
-./install.sh --list                 # 看有哪些
-./install.sh contract-redact        # 只装一个（软链到 ~/.hermes/skills）
-./install.sh --all                  # 全装
-./install.sh --target ~/.claude/skills --all   # 装给 Claude Code
+./install.sh --list                            # 看有哪些
+./install.sh contract-redact                   # 只装一个（默认软链到 ~/.hermes/skills）
+./install.sh --all                             # 全装
+./install.sh --target ~/.agents/skills --all   # 装到通用目录（Codex/Claude/Kimi/Cursor）
+./install.sh --all-targets --all               # 一次装进本机已有的常见助手目录
 ```
 
-用软链装：以后在这个仓库里改技能，本机立刻生效，不会出现「仓库一份、本机一份」两套。
+用软链装：以后在这个仓库里改技能，本机立刻生效，不会出现「仓库一份、本机一份」两套。升级已有实目录时，旧目录会备份到技能目录外的 `.skills-backups/`，不会污染助手扫描列表。
 
 只想要某几个技能的文件、不想整仓 clone：
 
@@ -39,7 +40,7 @@ git sparse-checkout set skills/contract-redact skills/tailnet-audit
 
 ```bash
 git pull                            # 全量更新（都是纯文本，秒完）
-./install.sh --all                  # 软链是活的，这步通常不需要
+./install.sh --all                  # 软链是活的，通常只有新增技能时才要重跑
 ```
 
 要「只更新某个技能」其实不用特意做——一个技能就几百 KB，全量 `git pull` 比手工挑快。真正值得挑的是**装哪些**，那由 `install.sh` 决定。
@@ -47,17 +48,17 @@ git pull                            # 全量更新（都是纯文本，秒完）
 ## 自检
 
 ```bash
-bash tests/smoke.sh          # 语法 + 内置样例 + 文档规范
+bash tests/smoke.sh          # 文档规范 + 注册表对齐 + 脚本语法 + 离线模拟测试 + 脱敏卫生扫描
 ```
 
-`tests/check_skill.py` 查四件事：frontmatter 六个字段齐不齐、description 有没有超长、`SKILL.md` 有没有超 200 行、正文里的相对链接能不能打开。
+`tests/check_skill.py` 会检查：frontmatter 六个字段齐不齐、`description` 有没有超长、`SKILL.md` 有没有超 200 行、正文里的相对链接（文档/脚本/样例）能不能打开、有没有漏写本机绝对路径。
 
 ## 约定
 
 - 一个技能一个目录，目录名 = `name` 字段。
-- `SKILL.md` 不超过 200 行；超了就把细节挪进 `references/`。
+- `SKILL.md` 不超过 200 行；超了就把细节挪进 `references/`；脚本示例统一写 `"$SKILL_DIR/scripts/..."` 以便跨工作区调用。
 - 脚本要么只读，要么每步都能回滚；会改东西的技能必须在 `SKILL.md` 里写清回滚方法。
-- 不放真实密钥、客户名单、内网地址；这些走各自的私有配置。
+- 不放真实密钥、客户名单、真实 IP、内网地址或本机绝对路径；这些走各自的私有配置。
 
 ## 许可
 

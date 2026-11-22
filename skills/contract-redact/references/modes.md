@@ -3,8 +3,8 @@
 ## 可逆（默认）
 
 ```bash
-python redact.py 合同.docx -o 合同_脱敏.docx
-python restore.py 合同_脱敏.docx --map 合同_脱敏.map.json -o 合同_还原.docx
+contract-redact redact 合同.docx -o 合同_脱敏.docx
+contract-redact restore 合同_脱敏.docx --map 合同_脱敏.map.json -o 合同_还原.docx
 ```
 
 - 换成【公司A】【电话1】，全文同一实体同一代号；
@@ -14,7 +14,7 @@ python restore.py 合同_脱敏.docx --map 合同_脱敏.map.json -o 合同_还�
 ## 掩码（不可逆）
 
 ```bash
-python redact.py 报价单.pdf -o 报价单_对外.pdf --mask-only
+contract-redact redact 报价单.pdf -o 报价单_对外.pdf --mask-only
 ```
 
 - 换成 `星*******公司`、`1********01`：留首尾，中间打星；
@@ -24,8 +24,8 @@ python redact.py 报价单.pdf -o 报价单_对外.pdf --mask-only
 ## 规则开关
 
 ```bash
-python redact.py 合同.docx -o 合同_脱敏.docx --only phone,id,password
-python redact.py 合同.docx -o 合同_脱敏.docx --skip address,person
+contract-redact redact 合同.docx -o 合同_脱敏.docx --only phone,id,password
+contract-redact redact 合同.docx -o 合同_脱敏.docx --skip address,person
 ```
 
 可用类别：`company` `person` `phone` `id` `credit` `bank` `address` `email` `customer` `supplier` `password`。
@@ -34,8 +34,8 @@ python redact.py 合同.docx -o 合同_脱敏.docx --skip address,person
 ## 映射表加密
 
 ```bash
-python redact.py 合同.docx -o 合同_脱敏.docx --passphrase '口令'
-python restore.py 合同_脱敏.docx --map 合同_脱敏.map.json --passphrase '口令' -o 还原.docx
+contract-redact redact 合同.docx -o 合同_脱敏.docx --passphrase '口令'
+contract-redact restore 合同_脱敏.docx --map 合同_脱敏.map.json --passphrase '口令' -o 还原.docx
 ```
 
 - scrypt 派生密钥 → HMAC-SHA256 流加密 → HMAC 认证，纯标准库；
@@ -53,4 +53,4 @@ python restore.py 合同_脱敏.docx --map 合同_脱敏.map.json --passphrase '
 ## 审计日志
 
 每次脱敏往 `~/.contract-redact/audit.log`（600）追加一行 JSON：时间、源文件、输出、模式、各类命中数、映射表指纹、生效的规则。
-只记元数据，不记原文。不要就加 `--no-audit`。
+只记元数据，不记原文。不要就加 `--no-audit`；需另存当前这次运行元数据可加 `--audit-json 审计.json`。

@@ -1,10 +1,9 @@
 {
-  "$schema": "./registry.schema.json",
-  "updated": "2026-10-24",
+  "updated": "2026-11-22",
   "skills": [
     {
       "name": "contract-redact",
-      "description": "中文合同本地脱敏：换成可还原代号供 AI 审查，或掩码后对外发送",
+      "description": "中文合同本地脱敏：换可还原代号发外审，或打星掩码对外发送，含自检与 OCR 体检。",
       "platforms": [
         "macos",
         "linux",
@@ -13,15 +12,13 @@
       "kind": "tool",
       "requires": [
         "python3",
-        "python-docx",
-        "openpyxl",
-        "pymupdf"
+        "contract-redact"
       ],
       "entry": "skills/contract-redact/SKILL.md"
     },
     {
       "name": "server-audit",
-      "description": "只读审查一台 Linux 服务器的安全面，出分级报告",
+      "description": "只读审查 Linux 服务器安全面：暴露端口、补丁、SSH、防火墙与容器端口，支持单机/多机。",
       "platforms": [
         "macos",
         "linux"
@@ -36,7 +33,7 @@
     },
     {
       "name": "server-harden",
-      "description": "按审计结果改服务器配置，每步可回滚，SSH 改动带 5 分钟自动还原",
+      "description": "按审计结果逐项加固 Linux 服务器，每步可回滚；改 SSH 先核验公钥并挂 5 分钟自动还原。",
       "platforms": [
         "macos",
         "linux"
@@ -50,7 +47,7 @@
     },
     {
       "name": "tailnet-audit",
-      "description": "审查 Tailscale 内网分段与暴露面，出可达性矩阵",
+      "description": "审查 Tailscale 内网分段与暴露面：并发探测可达性矩阵、跳过离线节点、查 ACL 与 DERP 坑。",
       "platforms": [
         "macos",
         "linux"
