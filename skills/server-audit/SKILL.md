@@ -1,7 +1,7 @@
 ---
 name: server-audit
-description: 只读审查一台 Linux 服务器的安全面：暴露端口、补丁、SSH、防火墙、密钥，出分级报告。
-version: 1.0.0
+description: 只读体检单台或多台 Linux 服务器安全面：SSH、防火墙、待装补丁、公开监听、容器绕过 UFW 与 TLS 证书，输出 P0-P2 分级报告。不改目标机，不用于代码审计。
+version: 1.1.0
 author: Kelin Pan, Hermes Agent
 license: MIT
 platforms: [macos, linux]
@@ -13,7 +13,9 @@ metadata:
 
 # 服务器安全审查（只读）
 
-对一台 Debian/Ubuntu 机器做只读体检，输出「证据 → 影响 → 怎么改 → 怎么验」的分级清单。
+> `$SKILL_DIR` 指本技能目录，执行前先替换成实际路径（支持在任意工作区直接调用）。
+
+对一台或多台 Linux 机器做只读体检，输出「证据 → 影响 → 怎么改 → 怎么验」的分级清单。
 **这个技能永远不修改目标机**；要动手走 `server-harden`。
 
 ## When to Use
@@ -26,20 +28,21 @@ metadata:
 
 ## Prerequisites
 
-- 目标机 SSH 可达，且你有只读权限的账号（root 或带 sudo 的账号）。
-- 本机有 bash、ssh；报告用 python3 汇总。
+- 目标机 SSH 可达（支持直接走 `~/.ssh/config` 别名免传 `--key`，或显式 `--key` + `--port`）。
+- 建议用 root 或免密 sudo 账号采集，否则 `ufw` / `sshd -T` 会自动记进 `unverified` 而不会误报。
+- 本机有 bash、ssh、python3。
 
 ## How to Run
 
 ```bash
-# 单机
-scripts/audit.sh --host root@10.0.0.10 --key ~/.ssh/deploy_ed25519 --out report.json
+# 单机（走 ~/.ssh/config 别名时可省略 --key）
+bash "$SKILL_DIR/scripts/audit.sh" --host root@192.0.2.10 --key ~/.ssh/deploy_ed25519 --out report.json
 
-# 多机（清单写在 config.json，格式见 examples/hosts.example.json）
-scripts/audit.sh --config hosts.json --out reports/
+# 多机并发巡检（格式见 examples/hosts.example.json）
+bash "$SKILL_DIR/scripts/audit.sh" --config hosts.json --out reports/ --jobs 4 --summary
 
 # 只看摘要，不落盘
-scripts/audit.sh --host root@10.0.0.10 --key ~/.ssh/deploy_ed25519 --summary
+bash "$SKILL_DIR/scripts/audit.sh" --host prod-gateway --summary
 ```
 
 输出：每台机一份 JSON（结构固定，便于比对历次结果）+ 终端里一份人看的摘要。
@@ -49,18 +52,19 @@ scripts/audit.sh --host root@10.0.0.10 --key ~/.ssh/deploy_ed25519 --summary
 | 想查 | 看 JSON 字段 |
 | --- | --- |
 | 谁在监听 0.0.0.0 | `listeners_public` |
-| 补丁欠多少 | `updates.pending`、`updates.security` |
+| 补丁欠多少 | `updates.pending`、`updates.security`（非 apt 系统见 `updates.supported`） |
 | SSH 能不能密码登录 | `sshd.password_auth`、`sshd.root_login` |
 | 防火墙开没开 | `firewall.active`、`firewall.default_in` |
+| 哪些因权限/系统未查到 | `unverified[]` |
 | 有没有雷 | `findings[]`（每条带 severity/evidence/fix） |
 
 ## Procedure
 
 1. **确认授权**：只审自己拥有或书面授权的机器；不确定就停，先问。
 2. **跑采集**：命令见上。完成标准：JSON 里 `host`、`collected_at` 有值，没有 `error` 字段。
-3. **看 findings**：脚本给的是候选，不是判决；每条都要能指回具体命令输出。
+3. **看 findings 与 unverified**：脚本给的是候选，不是判决；每条都要能指回具体命令输出；权限不足没查到的项如实列进「未验证」。
 4. **人工补两条机器判断不了的**：这台机器上跑的业务重要程度、它存着什么凭证（有没有私钥、token、数据库口令）。
-5. **出报告**：按 `references/report.md` 的结构写，P0/P1/P2 分级，未验证的写进「未验证」一节。
+5. **出报告**：按 [报告结构与分级](references/report.md) 写，P0/P1/P2 分级，未验证的写进「未验证」一节。
 6. **交接**：要改的项转给 `server-harden`，每项一条，别合并成一句「加固一下」。
 
 ## Pitfalls
@@ -69,13 +73,12 @@ scripts/audit.sh --host root@10.0.0.10 --key ~/.ssh/deploy_ed25519 --summary
 - **`ss -tlnp` 看到的 0.0.0.0 不等于公网可达**：云厂商安全组、UFW 都可能挡着，必须从外部实测（`nc -z` 公网 IP）才算数。
 - **容器发布的端口会绕过 UFW**（Docker 直接写 iptables）：`docker ps` 里 `0.0.0.0:` 那种要单独算风险，别被「UFW 只开了 22/443」骗了。
 - **别把密钥内容写进报告**：只记文件名、指纹、数量。
-- **别用 root 的口令登录做采集**：优先密钥，其次临时账号。
+- **别用 root 的口令登录做采集**：优先密钥，其次免密 sudo 临时账号。
 
 ## Verification
 
 ```bash
-bash tests/smoke.sh                        # 脚本自身自检（不连目标机）
-python3 tests/check_skill.py skills/server-audit
+bash "$SKILL_DIR/scripts/audit.sh" --self-test
 ```
 
 对着已知机器跑一次，报告的 `listeners_public` 应和 `ss -tlnp` 手查一致；对不上就修脚本，不是改报告。
@@ -85,3 +88,4 @@ python3 tests/check_skill.py skills/server-audit
 - [检查项与判据](references/checks.md)
 - [报告结构与分级](references/report.md)
 - [容器与云防火墙的坑](references/containers.md)
+- [多机清单样例](examples/hosts.example.json)

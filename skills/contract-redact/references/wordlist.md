@@ -22,12 +22,12 @@
 
 ## 同步
 
-名单多了就同步，不用手改：
+名单多了从 CSV 同步（以下脚本位于独立代码仓 `kelinpan0524-cell/contract-redact` 根目录，请在该代码仓目录下执行）：
 
 ```bash
-python tools/sync_terms.py --config vocab.json --kind customer \
+python3 tools/sync_terms.py --config vocab.json --kind customer \
     --csv 客户名单.csv --column 客户名称 --short-column 客户简称
-python tools/sync_terms.py --config vocab.json --kind supplier \
+python3 tools/sync_terms.py --config vocab.json --kind supplier \
     --csv 供应商名单.csv --column 供应商名称
 ```
 
@@ -47,8 +47,9 @@ python tools/sync_terms.py --config vocab.json --kind supplier \
 ## 候选回收
 
 ```bash
-python redact.py 合同.docx -o 合同_脱敏.docx --candidates 合同.candidates.json
-python tools/merge_candidates.py 合同.candidates.json --config vocab.json --only org,people
+contract-redact redact 合同.docx -o 合同_脱敏.docx --candidates 合同.candidates.json
+# 在 contract-redact 源码仓库目录执行合并：
+python3 tools/merge_candidates.py 合同.candidates.json --config vocab.json --only org,people
 ```
 
 候选文件是**未脱敏原文**：600 权限，不外发，确认后并入或删掉。

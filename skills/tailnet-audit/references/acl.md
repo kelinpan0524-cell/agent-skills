@@ -52,7 +52,8 @@ tag 谁能打，决定谁能把自己「升级」成受限更少的身份。理�
 ## 怎么拿 ACL 快照
 
 ```bash
-TS_API_KEY=tskey-api-xxx scripts/tailnet-recon.sh acl --out acl.json
+read -rsp "Tailscale API Key: " TS_API_KEY && export TS_API_KEY && echo
+bash "$SKILL_DIR/scripts/tailnet-recon.sh" acl --out acl.json
 ```
 
 或人工：后台 → Access controls → 复制 JSON，存进私有仓库做版本记录（改之前和改之后各存一份）。

@@ -1,0 +1,16 @@
+{
+  "hosts": [
+    {
+      "host": "root@192.0.2.10",
+      "key": "~/.ssh/deploy_ed25519",
+      "port": 22
+    },
+    {
+      "host": "ops@198.51.100.20",
+      "key": "~/.ssh/ops_ed25519"
+    },
+    {
+      "host": "prod-gateway-alias"
+    }
+  ]
+}
